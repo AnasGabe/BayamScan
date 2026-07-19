@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Hasil Klasifikasi | BayamScan</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --hijau-gelap: #1a3a2a;
+      --hijau-tua:   #2d5a3d;
+      --hijau:       #3d8b5a;
+      --hijau-muda:  #5cb87a;
+      --aksen:       #a8e063;
+      --krem:        #f5f0e8;
+      --putih:       #ffffff;
+      --abu:         #8a9a8e;
+      --teks:        #1c2e23;
+
+      --warna-segar: #2e7d32;
+      --warna-layu:  #f57f17;
+      --warna-busuk: #b71c1c;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--krem);
+      color: var(--teks);
+      min-height: 100vh;
+    }
+
+    nav {
+      background: var(--hijau-gelap);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-brand {
+      display: flex; align-items: center; gap: 0.75rem;
+      text-decoration: none;
+    }
+
+    .nav-logo {
+      width: 36px; height: 36px;
+      background: var(--aksen);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem;
+    }
+
+    .nav-title { color: var(--putih); font-weight: 700; font-size: 1.1rem; }
+    .nav-title span { color: var(--aksen); }
+
+    .nav-links a {
+      color: rgba(255,255,255,0.7);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--aksen); }
+
+    /* ── HERO RESULT ── */
+    .hero-result {
+      padding: 3rem 2rem 2rem;
+      text-align: center;
+      background: linear-gradient(135deg, var(--hijau-gelap), var(--hijau-tua));
+    }
+
+    .hero-result p {
+      color: rgba(255,255,255,0.6);
+      font-size: 0.95rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .hero-result h1 {
+      color: var(--putih);
+      font-size: 1.8rem;
+      font-weight: 700;
+    }
+
+    /* ── CONTAINER ── */
+    .container {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    /* ── RESULT CARD ── */
+    .result-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    @media (max-width: 640px) {
+      .result-grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--putih);
+      border-radius: 16px;
+      padding: 1.75rem;
+      box-shadow: 0 2px 12px rgba(26,58,42,0.08);
+      border: 1px solid rgba(93,184,122,0.15);
+    }
+
+    /* Gambar */
+    .img-card img {
+      width: 100%;
+      border-radius: 12px;
+      object-fit: contain;
+      max-height: 280px;
+      background: #f0f0f0;
+    }
+
+    .img-caption {
+      text-align: center;
+      color: var(--abu);
+      font-size: 0.82rem;
+      margin-top: 0.6rem;
+      font-family: 'Space Mono', monospace;
+    }
+
+    /* Label besar */
+    .label-besar {
+      font-size: 2rem;
+      font-weight: 700;
+      text-align: center;
+      padding: 0.5rem;
+      border-radius: 12px;
+      margin-bottom: 1.25rem;
+    }
+
+    .label-segar { background: #e8f5e9; color: var(--warna-segar); }
+    .label-layu  { background: #fff8e1; color: var(--warna-layu);  }
+    .label-busuk { background: #ffebee; color: var(--warna-busuk); }
+
+    /* Persentase bar */
+    .persen-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .persen-label span:first-child {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--teks);
+    }
+
+    .persen-label .angka {
+      font-family: 'Space Mono', monospace;
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .angka-segar { color: var(--warna-segar); }
+    .angka-layu  { color: var(--warna-layu);  }
+    .angka-busuk { color: var(--warna-busuk); }
+
+    .bar-track {
+      width: 100%;
+      height: 12px;
+      background: #e8ede9;
+      border-radius: 100px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 100px;
+      transition: width 1s ease;
+    }
+
+    .fill-segar { background: linear-gradient(90deg, #66bb6a, #2e7d32); }
+    .fill-layu  { background: linear-gradient(90deg, #ffcc02, #f57f17); }
+    .fill-busuk { background: linear-gradient(90deg, #ef5350, #b71c1c); }
+
+    /* Detail probabilitas */
+    .detail-title {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--abu);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    .prob-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .prob-kelas {
+      width: 70px;
+      font-weight: 500;
+      font-size: 0.9rem;
+      text-transform: capitalize;
+    }
+
+    .prob-bar-track {
+      flex: 1;
+      height: 8px;
+      background: #e8ede9;
+      border-radius: 100px;
+      overflow: hidden;
+    }
+
+    .prob-bar-fill {
+      height: 100%;
+      border-radius: 100px;
+    }
+
+    .prob-pct {
+      width: 48px;
+      text-align: right;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--abu);
+    }
+
+    /* Saran */
+    .saran-box {
+      margin-top: 1.5rem;
+      padding: 1rem 1.25rem;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .saran-segar {
+      background: #e8f5e9;
+      border-left: 4px solid #66bb6a;
+      color: #1b5e20;
+    }
+
+    .saran-layu {
+      background: #fff8e1;
+      border-left: 4px solid #ffca28;
+      color: #7a4500;
+    }
+
+    .saran-busuk {
+      background: #ffebee;
+      border-left: 4px solid #ef5350;
+      color: #7b1d1d;
+    }
+
+    .saran-title {
+      font-weight: 700;
+      margin-bottom: 0.3rem;
+    }
+
+    /* Tombol kembali */
+    .btn-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--hijau-gelap);
+      color: var(--putih);
+      text-decoration: none;
+      padding: 0.7rem 1.5rem;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+      margin-top: 1.5rem;
+    }
+
+    .btn-back:hover { background: #0f2219; transform: translateY(-1px); }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--abu);
+      font-size: 0.85rem;
+      border-top: 1px solid rgba(93,184,122,0.2);
+      margin-top: 2rem;
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" href="/">
+    <div class="nav-logo">🌿</div>
+    <span class="nav-title">Bayam<span>Scan</span></span>
+  </a>
+  <div class="nav-links">
+    <a href="/">← Kembali</a>
+  </div>
+</nav>
+
+<div class="hero-result">
+  <p>Hasil Analisis Daun Bayam</p>
+  <h1>Klasifikasi GLCM + SVM</h1>
+</div>
+
+<div class="container">
+  <div class="result-grid">
+
+    <!-- GAMBAR -->
+    <div class="card img-card">
+      <img src="{{ url_for('static', filename='upload/' + image_path) }}" alt="Daun Bayam"/>
+      <p class="img-caption">{{ image_path }}</p>
+    </div>
+
+    <!-- HASIL -->
+    <div class="card">
+
+      <!-- Label Utama -->
+      <div class="label-besar label-{{ label }}">
+        {% if label == 'segar' %}🌿 SEGAR
+        {% elif label == 'layu' %}🍂 LAYU
+        {% else %}🍁 BUSUK{% endif %}
+      </div>
+
+      <!-- Persentase Kesegaran -->
+      <div class="persen-label">
+        <span>Tingkat Kesegaran</span>
+        <span class="angka angka-{{ label }}">{{ persentase }}%</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill fill-{{ label }}" style="width: {{ persentase }}%"></div>
+      </div>
+
+      <!-- Detail Probabilitas -->
+      <p class="detail-title">Distribusi Probabilitas SVM</p>
+      {% for item in detail_proba %}
+      <div class="prob-row">
+        <span class="prob-kelas">{{ item.kelas|capitalize }}</span>
+        <div class="prob-bar-track">
+          <div class="prob-bar-fill fill-{{ item.kelas }}" style="width: {{ item.prob }}%"></div>
+        </div>
+        <span class="prob-pct">{{ item.prob }}%</span>
+      </div>
+      {% endfor %}
+
+      <!-- Saran -->
+      <div class="saran-box saran-{{ label }}">
+        <div class="saran-title">
+          {% if label == 'segar' %}💡 Rekomendasi{% elif label == 'layu' %}⚠️ Perhatian{% else %}🚫 Peringatan{% endif %}
+        </div>
+        {% if label == 'segar' %}
+          Daun bayam dalam kondisi segar dan baik. Siap untuk dikonsumsi atau diolah. Simpan di lemari pendingin untuk menjaga kesegaran lebih lama.
+        {% elif label == 'layu' %}
+          Daun bayam mulai mengalami kelayuan. Segera konsumsi dalam waktu dekat atau rendam dalam air dingin untuk memulihkan sedikit kesegarannya.
+        {% else %}
+          Daun bayam sudah mengalami pembusukan. Tidak disarankan untuk dikonsumsi. Sebaiknya dibuang untuk menghindari kontaminasi.
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+
+  <div style="text-align: center;">
+    <a href="/" class="btn-back">← Klasifikasi Gambar Lain</a>
+  </div>
+</div>
+
+<footer>
+  &copy; 2025 BayamScan · GLCM + SVM · Klasifikasi Daun Bayam
+</footer>
+
+<script>
+  // Animasi bar saat halaman load
+  window.addEventListener('load', () => {
+    document.querySelectorAll('.bar-fill, .prob-bar-fill').forEach(el => {
+      const target = el.style.width;
+      el.style.width = '0%';
+      setTimeout(() => { el.style.width = target; }, 100);
+    });
+  });
+</script>
+
+</body>
+</html>

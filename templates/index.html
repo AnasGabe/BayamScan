@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Klasifikasi Daun Bayam | GLCM + SVM</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --hijau-gelap:  #1a3a2a;
+      --hijau-tua:    #2d5a3d;
+      --hijau:        #3d8b5a;
+      --hijau-muda:   #5cb87a;
+      --aksen:        #a8e063;
+      --krem:         #f5f0e8;
+      --putih:        #ffffff;
+      --abu:          #8a9a8e;
+      --teks:         #1c2e23;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--krem);
+      color: var(--teks);
+      min-height: 100vh;
+    }
+
+    /* ── NAVBAR ── */
+    nav {
+      background: var(--hijau-gelap);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+    }
+
+    .nav-logo {
+      width: 36px;
+      height: 36px;
+      background: var(--aksen);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+    }
+
+    .nav-title {
+      color: var(--putih);
+      font-weight: 700;
+      font-size: 1.1rem;
+      letter-spacing: 0.01em;
+    }
+
+    .nav-title span {
+      color: var(--aksen);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 1.5rem;
+    }
+
+    .nav-links a {
+      color: rgba(255,255,255,0.7);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--aksen); }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hijau-gelap) 0%, var(--hijau-tua) 60%, var(--hijau) 100%);
+      padding: 4rem 2rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -20%;
+      width: 60%;
+      height: 200%;
+      background: radial-gradient(ellipse, rgba(168,224,99,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      background: rgba(168,224,99,0.2);
+      border: 1px solid rgba(168,224,99,0.4);
+      color: var(--aksen);
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+      padding: 0.3rem 0.9rem;
+      border-radius: 100px;
+      margin-bottom: 1.2rem;
+      letter-spacing: 0.08em;
+    }
+
+    .hero h1 {
+      color: var(--putih);
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 0.8rem;
+    }
+
+    .hero h1 em {
+      color: var(--aksen);
+      font-style: normal;
+    }
+
+    .hero p {
+      color: rgba(255,255,255,0.65);
+      font-size: 1.05rem;
+      max-width: 560px;
+      margin: 0 auto;
+    }
+
+    /* ── CONTAINER ── */
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem;
+    }
+
+    /* ── ALERT ── */
+    .alert {
+      padding: 1rem 1.25rem;
+      border-radius: 10px;
+      margin-bottom: 1.5rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .alert-success {
+      background: #d4edda;
+      color: #1a5c2e;
+      border-left: 4px solid var(--hijau-muda);
+    }
+
+    .alert-error {
+      background: #fde8e8;
+      color: #7b1d1d;
+      border-left: 4px solid #e05252;
+    }
+
+    /* ── CARDS ── */
+    .cards-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 640px) {
+      .cards-row { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--putih);
+      border-radius: 16px;
+      padding: 1.75rem;
+      box-shadow: 0 2px 12px rgba(26,58,42,0.08);
+      border: 1px solid rgba(93,184,122,0.15);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .card-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      flex-shrink: 0;
+    }
+
+    .icon-hijau  { background: #e8f5ee; }
+    .icon-biru   { background: #e8f0ff; }
+
+    .card h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--hijau-gelap);
+    }
+
+    .card p.sub {
+      color: var(--abu);
+      font-size: 0.85rem;
+      margin-top: 0.15rem;
+    }
+
+    /* ── UPLOAD AREA ── */
+    .upload-area {
+      border: 2px dashed rgba(93,184,122,0.5);
+      border-radius: 12px;
+      padding: 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s;
+      background: rgba(168,224,99,0.04);
+      position: relative;
+    }
+
+    .upload-area:hover, .upload-area.dragover {
+      border-color: var(--hijau-muda);
+      background: rgba(168,224,99,0.1);
+    }
+
+    .upload-area input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .upload-icon { font-size: 2.5rem; margin-bottom: 0.6rem; }
+
+    .upload-area p {
+      color: var(--abu);
+      font-size: 0.9rem;
+      margin-top: 0.3rem;
+    }
+
+    .upload-area strong {
+      color: var(--hijau);
+      display: block;
+      font-size: 1rem;
+    }
+
+    #preview-box {
+      margin-top: 1rem;
+      display: none;
+    }
+
+    #preview-box img {
+      max-height: 200px;
+      border-radius: 10px;
+      border: 2px solid var(--hijau-muda);
+      object-fit: contain;
+    }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 10px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+      margin-top: 1rem;
+    }
+
+    .btn-primary {
+      background: var(--hijau);
+      color: var(--putih);
+    }
+
+    .btn-primary:hover { background: var(--hijau-tua); transform: translateY(-1px); }
+    .btn-primary:disabled { background: #aaa; cursor: not-allowed; transform: none; }
+
+    .btn-secondary {
+      background: var(--hijau-gelap);
+      color: var(--putih);
+    }
+
+    .btn-secondary:hover { background: #0f2219; transform: translateY(-1px); }
+
+    /* ── STATUS MODEL ── */
+    .model-status {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.65rem 1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      margin-bottom: 1rem;
+    }
+
+    .status-ok  { background: #e8f5ee; color: #1a5c2e; }
+    .status-err { background: #fde8e8; color: #7b1d1d; }
+
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .dot-ok  { background: #3cb371; animation: pulse-ok 2s infinite; }
+    .dot-err { background: #e05252; }
+
+    @keyframes pulse-ok {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.4; }
+    }
+
+    /* ── AKURASI CARD ── */
+    .akurasi-box {
+      background: linear-gradient(135deg, var(--hijau-gelap), var(--hijau-tua));
+      color: var(--putih);
+      border-radius: 14px;
+      padding: 1.5rem;
+      text-align: center;
+      margin-top: 1.5rem;
+    }
+
+    .akurasi-box .nilai {
+      font-family: 'Space Mono', monospace;
+      font-size: 3rem;
+      font-weight: 700;
+      color: var(--aksen);
+      line-height: 1;
+    }
+
+    .akurasi-box .label-ak {
+      font-size: 0.9rem;
+      opacity: 0.7;
+      margin-top: 0.3rem;
+    }
+
+    /* ── LAPORAN ── */
+    .laporan-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      font-size: 0.88rem;
+    }
+
+    .laporan-table th {
+      background: var(--hijau-gelap);
+      color: var(--putih);
+      padding: 0.6rem 0.9rem;
+      text-align: left;
+      font-weight: 600;
+    }
+
+    .laporan-table td {
+      padding: 0.6rem 0.9rem;
+      border-bottom: 1px solid #e8ede9;
+    }
+
+    .laporan-table tr:nth-child(even) td { background: #f8fdf9; }
+
+    /* ── INFO CHIPS ── */
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .chip {
+      background: #e8f5ee;
+      color: var(--hijau-tua);
+      border-radius: 100px;
+      padding: 0.3rem 0.8rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      font-family: 'Space Mono', monospace;
+    }
+
+    .form-group {
+      margin-top: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .form-group.half { width: 100%; }
+
+    .form-group label {
+      font-size: 0.85rem;
+      color: var(--abu);
+      font-weight: 600;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid #d7e2d5;
+      padding: 0.85rem 1rem;
+      font-size: 0.95rem;
+      color: var(--teks);
+      background: #fbfdf8;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(93,184,122,0.18);
+      border-color: var(--hijau-muda);
+    }
+
+    .model-meta {
+      background: #f7fbf7;
+      border: 1px solid #e5f1e7;
+      border-radius: 14px;
+      padding: 1rem;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      color: var(--teks);
+      line-height: 1.5;
+    }
+
+    .model-meta p {
+      margin: 0.35rem 0;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--abu);
+      font-size: 0.85rem;
+      border-top: 1px solid rgba(93,184,122,0.2);
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+  <a class="nav-brand" href="/">
+    <div class="nav-logo">🌿</div>
+    <span class="nav-title">Bayam<span>Scan</span></span>
+  </a>
+  <div class="nav-links">
+    <a href="/">Beranda</a>
+    <a href="/info">Tentang</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-badge">GLCM + SVM · Klasifikasi Citra</div>
+  <h1>Klasifikasi Kesegaran<br><em>Daun Bayam</em></h1>
+  <p>Unggah gambar daun bayam dan sistem akan mengklasifikasikan tingkat kesegarannya menggunakan metode GLCM dan SVM.</p>
+</div>
+
+<!-- CONTAINER -->
+<div class="container">
+
+  <!-- ALERT -->
+  {% if pesan_sukses %}
+  <div class="alert alert-success">✅ {{ pesan_sukses }}</div>
+  {% endif %}
+  {% if pesan_error %}
+  <div class="alert alert-error">⚠️ {{ pesan_error }}</div>
+  {% endif %}
+
+  <div class="cards-row">
+
+    <!-- CARD: PREDIKSI -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon icon-hijau">🔍</div>
+        <div>
+          <h2>Prediksi Gambar</h2>
+          <p class="sub">Upload foto daun bayam</p>
+        </div>
+      </div>
+
+      <!-- Status Model -->
+      {% if model_ada %}
+      <div class="model-status status-ok">
+        <span class="dot dot-ok"></span> Model SVM siap digunakan
+      </div>
+      {% else %}
+      <div class="model-status status-err">
+        <span class="dot dot-err"></span> Model belum dilatih
+      </div>
+      {% endif %}
+
+      <form action="/predict" method="POST" enctype="multipart/form-data">
+        <div class="upload-area" id="uploadArea">
+          <input type="file" name="file" accept=".png,.jpg,.jpeg" id="fileInput" onchange="previewGambar(event)" required/>
+          <div class="upload-icon">📷</div>
+          <strong>Pilih atau seret gambar di sini</strong>
+          <p>Format: PNG, JPG, JPEG</p>
+        </div>
+        <div id="preview-box">
+          <img id="preview-img" src="" alt="Preview"/>
+        </div>
+        <button type="submit" class="btn btn-primary" {% if not model_ada %}disabled title="Latih model dulu!"{% endif %}>
+          🔬 Klasifikasikan Daun
+        </button>
+      </form>
+    </div>
+
+    <!-- CARD: TRAINING -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon icon-biru">🤖</div>
+        <div>
+          <h2>Latih Model SVM</h2>
+          <p class="sub">Training dari dataset</p>
+        </div>
+      </div>
+
+      <p style="color: var(--abu); font-size: 0.88rem; line-height: 1.6;">
+        Masukkan path dataset relatif ke direktori aplikasi, misalnya
+        <code>dataset</code> atau <code>dataset/Malabar_Dataset</code>,
+        lalu pastikan di dalamnya ada subfolder <code>segar/</code>,
+        <code>layu/</code>, dan <code>busuk/</code>.
+      </p>
+
+      <div class="chips">
+        <span class="chip">16+ Fitur</span>
+        <span class="chip">GLCM</span>
+        <span class="chip">SVM</span>
+        <span class="chip">Kernel Pilihan</span>
+      </div>
+
+      <form action="/train" method="POST">
+        <div class="form-group">
+          <label for="dataset_path">Path Dataset</label>
+          <input id="dataset_path" name="dataset_path" type="text" value="{{ dataset_path }}" placeholder="dataset"/>
+        </div>
+        <div class="form-row">
+          <div class="form-group half">
+            <label for="kernel">Kernel SVM</label>
+            <select id="kernel" name="kernel">
+              {% for option in kernels %}
+              <option value="{{ option }}" {% if option == selected_kernel %}selected{% endif %}>{{ option|upper }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group half">
+            <label for="color_mode">Color Mode</label>
+            <select id="color_mode" name="color_mode">
+              {% for option in color_modes %}
+              <option value="{{ option }}" {% if option == selected_color_mode %}selected{% endif %}>{{ option|upper }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-secondary">
+          ⚙️ Mulai Training
+        </button>
+      </form>
+
+      {% if akurasi %}
+      <div class="akurasi-box">
+        <div class="nilai">{{ akurasi }}%</div>
+        <div class="label-ak">Akurasi Model</div>
+      </div>
+
+      {% if laporan %}
+      <table class="laporan-table" style="margin-top:1.25rem;">
+        <thead>
+          <tr>
+            <th>Kelas</th>
+            <th>Precision</th>
+            <th>Recall</th>
+            <th>F1-Score</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for kelas in ['segar','layu','busuk'] %}
+          {% if laporan[kelas] %}
+          <tr>
+            <td>{{ kelas|capitalize }}</td>
+            <td>{{ "%.2f"|format(laporan[kelas].precision) }}</td>
+            <td>{{ "%.2f"|format(laporan[kelas].recall) }}</td>
+            <td>{{ "%.2f"|format(laporan[kelas]['f1-score']) }}</td>
+          </tr>
+          {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <div class="model-meta">
+        <p><strong>Kernel:</strong> {{ laporan.kernel|upper if laporan.kernel else 'RBF' }}</p>
+        <p><strong>Color Mode:</strong> {{ laporan.color_mode|upper if laporan.color_mode else 'HSV' }}</p>
+        <p><strong>Dataset:</strong> {{ laporan.dataset_path if laporan.dataset_path else 'dataset' }}</p>
+        <p><strong>CV F1-Score:</strong> {{ laporan.best_cv_score }}%</p>
+      </div>
+      {% endif %}
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  &copy; 2025 BayamScan · Klasifikasi Daun Bayam dengan GLCM + SVM
+</footer>
+
+<script>
+  function previewGambar(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      document.getElementById('preview-img').src = e.target.result;
+      document.getElementById('preview-box').style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // Drag & Drop
+  const area = document.getElementById('uploadArea');
+  area.addEventListener('dragover', (e) => { e.preventDefault(); area.classList.add('dragover'); });
+  area.addEventListener('dragleave', () => area.classList.remove('dragover'));
+  area.addEventListener('drop', (e) => {
+    e.preventDefault();
+    area.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      document.getElementById('fileInput').files = e.dataTransfer.files;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        document.getElementById('preview-img').src = ev.target.result;
+        document.getElementById('preview-box').style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+</script>
+
+</body>
+</html>

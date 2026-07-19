@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tentang GLCM & SVM | BayamScan</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --hijau-gelap: #1a3a2a;
+      --hijau-tua:   #2d5a3d;
+      --hijau:       #3d8b5a;
+      --hijau-muda:  #5cb87a;
+      --aksen:       #a8e063;
+      --krem:        #f5f0e8;
+      --putih:       #ffffff;
+      --abu:         #8a9a8e;
+      --teks:        #1c2e23;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--krem);
+      color: var(--teks);
+    }
+
+    nav {
+      background: var(--hijau-gelap);
+      padding: 1rem 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+
+    .nav-brand {
+      display: flex; align-items: center; gap: 0.75rem;
+      text-decoration: none;
+    }
+
+    .nav-logo {
+      width: 36px; height: 36px;
+      background: var(--aksen);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem;
+    }
+
+    .nav-title { color: var(--putih); font-weight: 700; font-size: 1.1rem; }
+    .nav-title span { color: var(--aksen); }
+
+    .nav-links a {
+      color: rgba(255,255,255,0.7);
+      text-decoration: none; font-weight: 500; font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--aksen); }
+
+    .hero {
+      background: linear-gradient(135deg, var(--hijau-gelap), var(--hijau-tua));
+      padding: 3.5rem 2rem;
+      text-align: center;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      background: rgba(168,224,99,0.2);
+      border: 1px solid rgba(168,224,99,0.4);
+      color: var(--aksen);
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+      padding: 0.3rem 0.9rem;
+      border-radius: 100px;
+      margin-bottom: 1rem;
+    }
+
+    .hero h1 { color: var(--putih); font-size: 2rem; font-weight: 700; }
+    .hero h1 em { color: var(--aksen); font-style: normal; }
+    .hero p { color: rgba(255,255,255,0.6); margin-top: 0.6rem; }
+
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem;
+    }
+
+    /* ── SECTION ── */
+    .section { margin-bottom: 2.5rem; }
+
+    .section-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--hijau-gelap);
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--aksen);
+      display: inline-block;
+    }
+
+    .card {
+      background: var(--putih);
+      border-radius: 16px;
+      padding: 1.75rem;
+      box-shadow: 0 2px 12px rgba(26,58,42,0.08);
+      border: 1px solid rgba(93,184,122,0.15);
+      margin-bottom: 1rem;
+    }
+
+    .card p {
+      color: #444;
+      line-height: 1.7;
+      font-size: 0.95rem;
+    }
+
+    /* ── FITUR GRID ── */
+    .fitur-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    .fitur-item {
+      background: var(--putih);
+      border-radius: 12px;
+      padding: 1.25rem;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(26,58,42,0.06);
+      border: 1px solid rgba(93,184,122,0.2);
+    }
+
+    .fitur-icon { font-size: 1.8rem; margin-bottom: 0.5rem; }
+
+    .fitur-nama {
+      font-weight: 700;
+      color: var(--hijau-gelap);
+      font-family: 'Space Mono', monospace;
+      font-size: 0.85rem;
+    }
+
+    .fitur-desc {
+      color: var(--abu);
+      font-size: 0.8rem;
+      margin-top: 0.3rem;
+    }
+
+    .fitur-grup {
+      font-size: 0.7rem;
+      background: #e8f5ee;
+      color: var(--hijau-tua);
+      border-radius: 100px;
+      padding: 0.15rem 0.6rem;
+      display: inline-block;
+      margin-top: 0.4rem;
+      font-weight: 600;
+    }
+
+    /* ── PIPELINE ── */
+    .pipeline {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin: 1rem 0;
+    }
+
+    .pipe-step {
+      background: var(--hijau-gelap);
+      color: var(--putih);
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .pipe-arrow {
+      color: var(--hijau-muda);
+      font-size: 1.2rem;
+    }
+
+    /* ── KELAS ── */
+    .kelas-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+
+    @media (max-width: 500px) {
+      .kelas-row { grid-template-columns: 1fr; }
+    }
+
+    .kelas-card {
+      border-radius: 12px;
+      padding: 1.25rem;
+      text-align: center;
+    }
+
+    .k-segar { background: #e8f5e9; border: 2px solid #66bb6a; }
+    .k-layu  { background: #fff8e1; border: 2px solid #ffca28; }
+    .k-busuk { background: #ffebee; border: 2px solid #ef5350; }
+
+    .kelas-emoji { font-size: 2rem; }
+
+    .kelas-nama {
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin: 0.4rem 0 0.3rem;
+    }
+
+    .k-segar .kelas-nama { color: #2e7d32; }
+    .k-layu  .kelas-nama { color: #f57f17; }
+    .k-busuk .kelas-nama { color: #b71c1c; }
+
+    .kelas-desc {
+      font-size: 0.82rem;
+      color: #555;
+      line-height: 1.5;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--abu);
+      font-size: 0.85rem;
+      border-top: 1px solid rgba(93,184,122,0.2);
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" href="/">
+    <div class="nav-logo">🌿</div>
+    <span class="nav-title">Bayam<span>Scan</span></span>
+  </a>
+  <div class="nav-links">
+    <a href="/">← Beranda</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="hero-badge">Dokumentasi Sistem</div>
+  <h1>Tentang <em>GLCM + SVM</em></h1>
+  <p>Penjelasan metode, fitur, dan alur kerja sistem klasifikasi daun bayam</p>
+</div>
+
+<div class="container">
+
+  <!-- PIPELINE -->
+  <div class="section">
+    <div class="section-title">Alur Kerja Sistem</div>
+    <div class="card">
+      <div class="pipeline">
+        <div class="pipe-step">📷 Input Citra</div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-step">⚙️ Preprocessing</div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-step">🎨 Ekstraksi HSV</div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-step">🔲 Ekstraksi GLCM</div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-step">📐 Edge Detection</div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-step">📊 Normalisasi</div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-step">🤖 SVM</div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-step">✅ Hasil</div>
+      </div>
+      <p>Gambar daun bayam diproses melalui serangkaian tahapan: preprocessing untuk menyeragamkan ukuran, ekstraksi fitur warna HSV, tekstur GLCM, dan deteksi tepi, lalu diklasifikasikan oleh model SVM.</p>
+    </div>
+  </div>
+
+  <!-- GLCM -->
+  <div class="section">
+    <div class="section-title">Gray Level Co-occurrence Matrix (GLCM)</div>
+    <div class="card">
+      <p>
+        GLCM adalah metode statistik untuk mengekstraksi fitur tekstur dari sebuah citra. Matriks ini menghitung seberapa sering pasangan piksel dengan nilai kecerahan tertentu muncul berdampingan dalam sebuah gambar pada arah dan jarak yang ditentukan.
+      </p>
+      <br/>
+      <p>
+        Sistem ini menggunakan 4 arah sudut (0°, 45°, 90°, 135°) dengan jarak 1 piksel, menghasilkan 6 fitur tekstur yang menjadi ciri khas kondisi permukaan daun bayam.
+      </p>
+    </div>
+  </div>
+
+  <!-- FITUR -->
+  <div class="section">
+    <div class="section-title">16 Fitur Ekstraksi</div>
+    <div class="fitur-grid">
+      <!-- HSV -->
+      <div class="fitur-item">
+        <div class="fitur-icon">🔵</div>
+        <div class="fitur-nama">H_mean & H_std</div>
+        <div class="fitur-desc">Rata-rata & deviasi Hue</div>
+        <span class="fitur-grup">HSV</span>
+      </div>
+      <div class="fitur-item">
+        <div class="fitur-icon">🟢</div>
+        <div class="fitur-nama">S_mean & S_std</div>
+        <div class="fitur-desc">Rata-rata & deviasi Saturation</div>
+        <span class="fitur-grup">HSV</span>
+      </div>
+      <div class="fitur-item">
+        <div class="fitur-icon">🟡</div>
+        <div class="fitur-nama">V_mean & V_std</div>
+        <div class="fitur-desc">Rata-rata & deviasi Value</div>
+        <span class="fitur-grup">HSV</span>
+      </div>
+      <!-- GLCM -->
+      <div class="fitur-item">
+        <div class="fitur-icon">📊</div>
+        <div class="fitur-nama">Contrast</div>
+        <div class="fitur-desc">Perbedaan intensitas piksel tetangga</div>
+        <span class="fitur-grup">GLCM</span>
+      </div>
+      <div class="fitur-item">
+        <div class="fitur-icon">⚡</div>
+        <div class="fitur-nama">Energy</div>
+        <div class="fitur-desc">Keseragaman distribusi piksel</div>
+        <span class="fitur-grup">GLCM</span>
+      </div>
+      <div class="fitur-item">
+        <div class="fitur-icon">🎯</div>
+        <div class="fitur-nama">Homogeneity</div>
+        <div class="fitur-desc">Kehalusan tekstur citra</div>
+        <span class="fitur-grup">GLCM</span>
+      </div>
+      <div class="fitur-item">
+        <div class="fitur-icon">🔗</div>
+        <div class="fitur-nama">Correlation</div>
+        <div class="fitur-desc">Dependensi linier piksel</div>
+        <span class="fitur-grup">GLCM</span>
+      </div>
+      <div class="fitur-item">
+        <div class="fitur-icon">📐</div>
+        <div class="fitur-nama">Dissimilarity</div>
+        <div class="fitur-desc">Ukuran ketidaksamaan piksel</div>
+        <span class="fitur-grup">GLCM</span>
+      </div>
+      <div class="fitur-item">
+        <div class="fitur-icon">💡</div>
+        <div class="fitur-nama">ASM</div>
+        <div class="fitur-desc">Angular Second Moment</div>
+        <span class="fitur-grup">GLCM</span>
+      </div>
+      <!-- Edge -->
+      <div class="fitur-item">
+        <div class="fitur-icon">〰️</div>
+        <div class="fitur-nama">Edge Density</div>
+        <div class="fitur-desc">Kepadatan tepi pada daun</div>
+        <span class="fitur-grup">Edge</span>
+      </div>
+      <div class="fitur-item">
+        <div class="fitur-icon">🟤</div>
+        <div class="fitur-nama">Brown Ratio</div>
+        <div class="fitur-desc">Rasio area coklat/busuk</div>
+        <span class="fitur-grup">Edge</span>
+      </div>
+      <div class="fitur-item">
+        <div class="fitur-icon">🔷</div>
+        <div class="fitur-nama">Solidity</div>
+        <div class="fitur-desc">Rasio area terhadap convex hull</div>
+        <span class="fitur-grup">Edge</span>
+      </div>
+      <div class="fitur-item">
+        <div class="fitur-icon">📏</div>
+        <div class="fitur-nama">PA Ratio</div>
+        <div class="fitur-desc">Rasio perimeter terhadap area</div>
+        <span class="fitur-grup">Edge</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SVM -->
+  <div class="section">
+    <div class="section-title">Support Vector Machine (SVM)</div>
+    <div class="card">
+      <p>
+        SVM adalah algoritma klasifikasi yang bekerja dengan menemukan hyperplane terbaik yang memisahkan kelas-kelas data. Sistem ini menggunakan kernel <strong>RBF (Radial Basis Function)</strong> yang cocok untuk data dengan fitur gabungan seperti warna dan tekstur.
+      </p>
+      <br/>
+      <p>
+        Parameter yang digunakan: <code>C=10</code> (regularisasi), <code>gamma='scale'</code> (otomatis menyesuaikan skala fitur), dengan preprocessing <strong>StandardScaler</strong> untuk normalisasi semua fitur ke rentang yang seragam.
+      </p>
+    </div>
+  </div>
+
+  <!-- KELAS -->
+  <div class="section">
+    <div class="section-title">Kelas Klasifikasi</div>
+    <div class="kelas-row">
+      <div class="kelas-card k-segar">
+        <div class="kelas-emoji">🌿</div>
+        <div class="kelas-nama">SEGAR</div>
+        <div class="kelas-desc">Daun berwarna hijau cerah, tidak ada bercak, tekstur padat, dan tepi daun masih utuh.</div>
+      </div>
+      <div class="kelas-card k-layu">
+        <div class="kelas-emoji">🍂</div>
+        <div class="kelas-nama">LAYU</div>
+        <div class="kelas-desc">Warna mulai menguning, tekstur lebih lembek, tepi daun mulai mengkerut namun belum busuk.</div>
+      </div>
+      <div class="kelas-card k-busuk">
+        <div class="kelas-emoji">🍁</div>
+        <div class="kelas-nama">BUSUK</div>
+        <div class="kelas-desc">Daun berwarna coklat kehitaman, bercak busuk meluas, tekstur rusak, dan tidak layak konsumsi.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  &copy; 2025 BayamScan · Klasifikasi Daun Bayam dengan GLCM + SVM
+</footer>
+
+</body>
+</html>
